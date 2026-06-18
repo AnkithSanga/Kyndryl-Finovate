@@ -6,7 +6,7 @@
             "framework": "create-react-app"
         },
         "backend": {
-            "entrypoint": "backend/app.py",
+            "entrypoint": "backend/wsgi.py",
             "routePrefix": "/api"
         }
     }

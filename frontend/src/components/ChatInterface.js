@@ -3,7 +3,7 @@ import axios from 'axios';
 import './ChatInterface.css';
 import FAQMenu from './FAQMenu';
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api';
 
 // Map our language codes to SpeechRecognition API language codes
 const SPEECH_LANGUAGE_MAP = {
