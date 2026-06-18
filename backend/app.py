@@ -50,9 +50,24 @@ CORS(app)
 
 # Database configuration
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(basedir, "banking_assistant.db")}'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# 1. Check if a Cloud Database URL environment variable exists
+database_url = os.getenv('DATABASE_URL')
+
+if database_url:
+    # Quick fix for SQLAlchemy 1.4+ compatibility:
+    # External DB providers often give strings starting with 'postgres://', 
+    # but SQLAlchemy now strictly requires 'postgresql://'
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    # Fallback to your local SQLite configuration when running on your machine
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(basedir, "banking_assistant.db")}'
+
+# 2. Fixed the casing typo from FalsE -> False
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # Health check endpoint for deployment
