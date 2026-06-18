@@ -63,8 +63,12 @@ if database_url:
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 else:
-    # Fallback to your local SQLite configuration when running on your machine
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(basedir, "banking_assistant.db")}'
+    # If we are on Vercel, use the ONLY writable folder allowed
+    if os.environ.get('VERCEL'):
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/banking_assistant.db'
+    else:
+        # Local fallback for your machine
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(basedir, "banking_assistant.db")}'
 
 # 2. Fixed the casing typo from FalsE -> False
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
