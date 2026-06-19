@@ -66,22 +66,55 @@ const ChatInterface = ({ sessionId, language }) => {
       'கடன் தகவல்',
       'கார்டு சேவைகள்'
     ],
-    // For other languages, use English and let backend translate
-    te: ['Check Balance', 'View Transactions', 'Transfer Money', 'Loan Information', 'Card Services'],
-    kn: ['Check Balance', 'View Transactions', 'Transfer Money', 'Loan Information', 'Card Services'],
-    ml: ['Check Balance', 'View Transactions', 'Transfer Money', 'Loan Information', 'Card Services'],
-    mr: ['Check Balance', 'View Transactions', 'Transfer Money', 'Loan Information', 'Card Services'],
-    gu: ['Check Balance', 'View Transactions', 'Transfer Money', 'Loan Information', 'Card Services'],
-    bn: ['Check Balance', 'View Transactions', 'Transfer Money', 'Loan Information', 'Card Services'],
-    es: ['Check Balance', 'View Transactions', 'Transfer Money', 'Loan Information', 'Card Services'],
-    fr: ['Check Balance', 'View Transactions', 'Transfer Money', 'Loan Information', 'Card Services'],
-    de: ['Check Balance', 'View Transactions', 'Transfer Money', 'Loan Information', 'Card Services'],
-    pt: ['Check Balance', 'View Transactions', 'Transfer Money', 'Loan Information', 'Card Services'],
-    zh: ['Check Balance', 'View Transactions', 'Transfer Money', 'Loan Information', 'Card Services'],
-    ja: ['Check Balance', 'View Transactions', 'Transfer Money', 'Loan Information', 'Card Services'],
-    ko: ['Check Balance', 'View Transactions', 'Transfer Money', 'Loan Information', 'Card Services'],
-    ar: ['Check Balance', 'View Transactions', 'Transfer Money', 'Loan Information', 'Card Services'],
-    ru: ['Check Balance', 'View Transactions', 'Transfer Money', 'Loan Information', 'Card Services']
+    te: [
+      'బ్యాలెన్స్ తనిఖీ',
+      'ట్రాన్సాక్షన్లు చూడండి',
+      'పணம் బదిలీ చేయండి',
+      'లోన్ సమాచారం',
+      'కార్డ్ సేవలు'
+    ],
+    kn: [
+      'ಬ್ಯಾಲೆನ್ಸ್ ಪರಿಶೀಲಿಸಿ', 
+      'ಟ್ರಾನ್ಸಾಕ್ಷನ್‌ಗಳನ್ನು ನೋಡಿ',
+      'ಹಣ ವರ್ಗಾಯಿಸಿ',
+      'ಕಡನ್ ಮಾಹಿತಿ',
+      'ಕಾರ್ಡ್ ಸೇವೆಗಳು'
+    ],
+    ml: [
+      'ബാലൻസ് പരിശോധിക്കുക',
+      'ട്രാൻസാക്ഷനുകൾ കാണുക',
+      'പണം മാറ്റുക',
+      'ലോൺ വിവരങ്ങൾ',
+      'കാർഡ് സേവനങ്ങൾ'
+    ],
+    mr: [
+      'शिल्लक तपासा',
+      'व्यवहार पहा',
+      'पैसे ट्रांसफर करें',
+      'कर्ज माहिती',
+      'कार्ड सेवा'
+    ],
+    gu: [
+      'બેલેન્સ તપાસો',
+      'ટ્રાન્ઝેક્શન્સ જુઓ',
+      'પૈસા ટ્રાન્સફર કરો',
+      'લોન માહિતી',
+      'કાર્ડ સેવાઓ'
+    ],
+    bn: [
+      'ব্যালেন্স পরীক্ষা করুন',
+      'লেনদেন দেখুন',
+      'টাকা স্থানান্তর করুন',
+      'ঋণ তথ্য',
+      'কার্ড পরিষেবা'
+    ],
+    or: [
+      'ବ୍ୟାଲେନ୍ସ ଯାଞ୍ଚ କରନ୍ତୁ',
+      'ଟ୍ରାନ୍ଜାକ୍ସନ୍ ଦେଖନ୍ତୁ',
+      'ଟଙ୍କା ଟ୍ରାନ୍ସଫର କରନ୍ତୁ',
+      'ଲୋନ୍ ସୂଚନା',
+      'କାର୍ଡ ସେବା'
+    ]
   };
 
   // Update useAI ref whenever useAI state changes

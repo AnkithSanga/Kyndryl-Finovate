@@ -13,6 +13,8 @@ load_dotenv()
 # Import translation and FAQ services
 from translation_service import translate_text, detect_language, translate_faq
 from faq_data import BANKING_FAQS, get_faq_by_keyword, get_faqs_by_category, get_all_categories
+from rag import query_rag
+from data.mock_responses import MOCKED_RESPONSES
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -46,7 +48,15 @@ IMPORTANT BOUNDARIES:
 Remember: You represent Kyndryl Bank and must maintain trust and professionalism."""
 
 app = Flask(__name__)
-CORS(app)
+# Enhanced CORS configuration with explicit settings
+CORS(app, 
+     resources={r"/*": {
+         "origins": "*",
+         "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+         "allow_headers": ["Content-Type", "Authorization"],
+         "supports_credentials": False
+     }},
+     expose_headers=["Content-Type"])
 
 # Database configuration
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -105,34 +115,9 @@ class Interaction(db.Model):
             'intent': self.intent
         }
 
-# Mocked responses for banking assistant
-MOCKED_RESPONSES = {
-    'en': {
-        'greeting': "Hello! I'm your virtual banking assistant. How can I help you today?",
-        'balance': "Your current account balance is ₹25,450.00. Would you like to check any specific transaction?",
-        'transactions': "Here are your recent transactions:\n1. Payment to Amazon - ₹1,299 (Nov 25)\n2. Salary Credit - ₹50,000 (Nov 24)\n3. ATM Withdrawal - ₹5,000 (Nov 23)",
-        'transfer': "I can help you with money transfers. Please provide:\n- Recipient account number\n- Amount\n- Purpose of transfer",
-        'loans': "We offer various loan products:\n- Personal Loans (up to ₹20L)\n- Home Loans (up to ₹1Cr)\n- Car Loans (up to ₹50L)\nWould you like to know more about any specific loan?",
-        'cards': "Your card services:\n- Credit Card limit: ₹2,00,000\n- Debit Card active\n- Card replacement available\nHow can I assist with your cards?",
-        'default': "I understand you're asking about banking services. Could you please be more specific? I can help with:\n- Account balance\n- Transactions\n- Money transfers\n- Loans\n- Card services"
-    },
-    'hi': {
-        'greeting': "नमस्ते! मैं आपका वर्चुअल बैंकिंग सहायक हूं। आज मैं आपकी कैसे मदद कर सकता हूं?",
-        'balance': "आपका वर्तमान खाता शेष ₹25,450.00 है। क्या आप कोई विशिष्ट लेनदेन देखना चाहेंगे?",
-        'transactions': "यहां आपके हाल के लेनदेन हैं:\n1. अमेज़न को भुगतान - ₹1,299 (25 नवंबर)\n2. वेतन जमा - ₹50,000 (24 नवंबर)\n3. एटीएम निकासी - ₹5,000 (23 नवंबर)",
-        'transfer': "मैं आपकी धन हस्तांतरण में मदद कर सकता हूं। कृपया प्रदान करें:\n- प्राप्तकर्ता खाता संख्या\n- राशि\n- हस्तांतरण का उद्देश्य",
-        'loans': "हम विभिन्न ऋण उत्पाद प्रदान करते हैं:\n- व्यक्तिगत ऋण (₹20L तक)\n- गृह ऋण (₹1Cr तक)\n- कार ऋण (₹50L तक)\nक्या आप किसी विशिष्ट ऋण के बारे में अधिक जानना चाहेंगे?",
-        'default': "मैं समझ गया कि आप बैंकिंग सेवाओं के बारे में पूछ रहे हैं। कृपया अधिक विशिष्ट हो सकते हैं? मैं मदद कर सकता हूं:\n- खाता शेष\n- लेनदेन\n- धन हस्तांतरण\n- ऋण\n- कार्ड सेवाएं"
-    },
-    'ta': {
-        'greeting': "வணக்கம்! நான் உங்கள் மெய்நிகர் வங்கி உதவியாளர். இன்று நான் உங்களுக்கு எவ்வாறு உதவ முடியும்?",
-        'balance': "உங்கள் தற்போதைய கணக்கு இருப்பு ₹25,450.00 ஆகும். எந்த குறிப்பிட்ட பரிவர்த்தனையை சரிபார்க்க விரும்புகிறீர்கள்?",
-        'transactions': "இங்கே உங்கள் சமீபத்திய பரிவர்த்தனைகள்:\n1. அமேசான் செலுத்துதல் - ₹1,299 (நவம்பர் 25)\n2. சம்பளம் வரவு - ₹50,000 (நவம்பர் 24)\n3. ATM பணம் எடுத்தல் - ₹5,000 (நவம்பர் 23)",
-        'transfer': "நான் பணம் மாற்றத்தில் உதவ முடியும். தயவுசெய்து வழங்கவும்:\n- பெறுநர் கணக்கு எண்\n- தொகை\n- மாற்றத்தின் நோக்கம்",
-        'loans': "நாங்கள் பல்வேறு கடன் தயாரிப்புகளை வழங்குகிறோம்:\n- தனிப்பட்ட கடன்கள் (₹20L வரை)\n- வீட்டு கடன்கள் (₹1Cr வரை)\n- கார் கடன்கள் (₹50L வரை)\nநீங்கள் எந்த குறிப்பிட்ட கடனைப் பற்றி மேலும் அறிய விரும்புகிறீர்களா?",
-        'default': "நான் நீங்கள் வங்கி சேவைகள் பற்றி கேட்கிறீர்கள் என்பதை புரிந்துகொள்கிறேன். தயவுசெய்து மேலும் குறிப்பிட்டதாக இருக்க முடியுமா? நான் உதவ முடியும்:\n- கணக்கு இருப்பு\n- பரிவர்த்தனைகள்\n- பண மாற்றங்கள்\n- கடன்கள்\n- கார்டு சேவைகள்"
-    }
-}
+
+
+
 
 def detect_intent_and_language(message, preferred_language='en'):
     """Enhanced intent detection with language detection"""
@@ -188,12 +173,14 @@ def detect_intent_and_language(message, preferred_language='en'):
     
     return intent, language
 
-@app.route('/chat', methods=['POST'])
+@app.route('/api/chat', methods=['POST'])
 def chat():
     """Main chat endpoint with translation, FAQ support, and optional AI analysis
     Supports both traditional FAQ/mock responses and AI-powered responses"""
+    logger.info("Received chat request")
     data = request.json
     user_message = data.get('message', '')
+    logger.info("Received user_message of length %d", len(user_message))
     session_id = data.get('session_id', 'default_session')
     preferred_language = data.get('language', 'en')
     enable_translation = data.get('translate', True)
@@ -215,9 +202,26 @@ def chat():
         assistant_response = None
         response_source = 'mock'  # Default source
         
-        # If AI is enabled, use Gemini for enhanced responses
-        if use_ai:
-            logger.info(f"AI mode enabled for message: {user_message[:50]}...")
+        # Try RAG first for knowledge base queries (highest priority)
+        logger.info(f"Attempting RAG query for message: {user_message[:50]}...")
+        rag_response = query_rag(user_message, top_k=5)
+        if rag_response:
+            assistant_response = rag_response
+            response_source = 'rag'
+            logger.info(f"Successfully got RAG response")
+            
+            # Translate RAG response if target language is not English
+            if target_language != 'en' and enable_translation:
+                try:
+                    assistant_response = translate_text(assistant_response, target_language, 'en')
+                    logger.info(f"Translated RAG response to {target_language}")
+                except Exception as e:
+                    logger.error(f"RAG response translation error: {e}")
+                    # Keep the English response if translation fails
+        
+        # If no RAG response, try AI if enabled
+        if not assistant_response and use_ai:
+            logger.info(f"RAG unavailable, using AI mode for message: {user_message[:50]}...")
             ai_response = get_ai_response(user_message, target_language)
             if ai_response:
                 assistant_response = ai_response
@@ -227,7 +231,7 @@ def chat():
                 logger.info("AI response unavailable, falling back to FAQ/mock responses")
                 assistant_response = None
         
-        # If no AI response or AI is disabled, use traditional FAQ/mock responses
+        # If no RAG or AI response, use traditional FAQ/mock responses
         if not assistant_response:
             # Try to get FAQ answer first (searches in any language)
             faq_answer = get_faq_by_keyword(user_message, target_language)
@@ -546,7 +550,7 @@ def health():
 def get_faq_categories():
     """Get all FAQ categories"""
     language = request.args.get('language', 'en')
-    if language not in ['en', 'hi', 'ta']:
+    if language not in ['en', 'hi', 'ta','te','kn','ml','mr','gu','bn','or']:
         language = 'en'
     
     try:

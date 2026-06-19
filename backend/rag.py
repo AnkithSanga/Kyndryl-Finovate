@@ -1,24 +1,24 @@
 import os
+import logging
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from dotenv import load_dotenv
 import google.generativeai as genai
 from sentence_transformers import SentenceTransformer
 
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY is not set in the environment variables.")
-genai.configure(api_key=GEMINI_API_KEY)
+GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    logger.info("Gemini API configured for RAG.")
+else:
+    logger.warning("GEMINI_API_KEY not set. RAG will not work.")
 
-print("GEMINI_API_KEY is set and the API is configured.")
-print("Starting to load the embedding model...")
-embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-print("Embedding model loaded successfully.")
-
-sentences = [
+# Knowledge base documents
+KNOWLEDGE_BASE = [
     "As of June 2026, the RBI Repo Rate is 5.25%. Changes in the Repo Rate can influence loan interest rates and EMIs.",
     "Kyndryl Bank Savings Accounts offer interest rates ranging from 2.70% to 3.00% per annum depending on account balance.",
     "Kyndryl Bank Fixed Deposits for general customers currently offer interest rates between 6.00% and 7.10% per annum based on tenure.",
@@ -32,51 +32,104 @@ sentences = [
     "A Personal Loan of ₹5 lakh for 5 years at 11% interest may result in an EMI of approximately ₹10,870."
 ]
 
-print("Generating embeddings for the sentences...")
-sentence_embeddings = embedding_model.encode(sentences)
-print("Embeddings generated successfully.")
+# Load embedding model
+try:
+    embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+    kb_embeddings = embedding_model.encode(KNOWLEDGE_BASE)
+    logger.info("Embedding model and knowledge base loaded successfully.")
+except Exception as e:
+    logger.error(f"Error loading embedding model: {e}")
+    embedding_model = None
+    kb_embeddings = None
 
-similarity_matrix = cosine_similarity(sentence_embeddings)
-print("Cosine similarity matrix computed successfully.")
-print("Cosine Similarity Matrix: \n ")
 
-for i in range(len(sentences)):
-    for j in range(len(sentences)):
-        print(f"{similarity_matrix[i][j]:.2f}", end=" ")
-    print()  # New line after each row
+def query_rag(user_query, top_k=5, similarity_threshold=0.0):
+    """
+    Query the RAG system with a user question.
     
+    Args:
+        user_query (str): The user's question
+        top_k (int): Number of top relevant documents to retrieve (default: 5)
+        similarity_threshold (float): Minimum similarity score to include (default: 0.0, no threshold)
+        
+    Returns:
+        str: Response from Gemini API based on relevant context
+    """
+    try:
+        if not embedding_model or kb_embeddings is None:
+            logger.error("Embedding model or knowledge base not initialized")
+            return None
+        
+        if not GEMINI_API_KEY:
+            logger.error("Gemini API key not configured")
+            return None
+        
+        # Encode the user query
+        query_embedding = embedding_model.encode(user_query)
+        
+        # Compute similarity scores
+        scores = cosine_similarity([query_embedding], kb_embeddings)[0]
+        
+        # Get all results and sort by score
+        results = list(zip(KNOWLEDGE_BASE, scores))
+        results.sort(key=lambda x: x[1], reverse=True)
+        
+        # Log all scores for debugging
+        logger.info(f"RAG Query: '{user_query}'")
+        logger.info("All similarity scores:")
+        for idx, (sentence, score) in enumerate(results):
+            logger.info(f"  [{idx}] Score: {score:.4f} -- {sentence[:80]}...")
+        
+        # Collect context from top results that meet the threshold
+        contexts = ""
+        retrieved_count = 0
+        for sentence, score in results:
+            if retrieved_count >= top_k:
+                break
+            if score >= similarity_threshold:
+                logger.info(f"Selected (score {score:.4f}): {sentence[:80]}...")
+                contexts += sentence + " "
+                retrieved_count += 1
+        
+        if not contexts.strip():
+            logger.warning(f"No documents met similarity threshold {similarity_threshold}")
+            # Fallback: use top_k regardless of threshold
+            logger.info("Falling back to top-k without threshold")
+            for sentence, score in results[:top_k]:
+                contexts += sentence + " "
+        
+        # Generate response using Gemini
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        
+        prompt = f"""You are a helpful banking assistant for Kyndryl Bank. Answer the question accurately based on the context provided.
 
-query = "what are the interest like in kyndryl bank?"
-query_embedding = embedding_model.encode(query)
-scores = cosine_similarity([query_embedding], sentence_embeddings)[0]
-
-print("\n Query: ", query)
-print("\n Semantic Search Results: \n")
-results = list(zip(sentences, scores))
-results.sort(key=lambda x: x[1], reverse=True)
-
-contexts = ""
-
-for sentence, score in results:
-    print(f"{score:.3f} --{sentence[:100]}...")
-    contexts += sentence + " "
-
-print("\n"+"="*50)
-print("Generating response using Gemini API...")
-print("=*50 + \n")
-
-model = genai.GenerativeModel("gemini-2.5-flash")
-
-prompt = f"""You are helpful assistant that answer the question based on the context provided.
 Context: 
 {contexts}
 
-Question: {query}
+Question: {user_query}
 
-Please provivde a detailed and accurate answer base don the context provided above."""
+Instructions:
+1. Use ONLY the information from the context provided above
+2. Provide accurate and detailed answers
+3. If the exact information is in the context, use it directly
+4. Do not add information outside the context
+5. Be helpful and professional"""
+        
+        response = model.generate_content(prompt)
+        
+        logger.info(f"RAG response generated successfully for query: {user_query[:50]}...")
+        return response.text
+        
+    except Exception as e:
+        logger.error(f"Error in query_rag: {e}", exc_info=True)
+        return None
 
 
-response = model.generate_content(prompt)
-
-
-print("Response:", response.text)
+# For backward compatibility - if script is run directly
+if __name__ == "__main__":
+    query = "what are the interest rates in kyndryl bank?"
+    response = query_rag(query)
+    if response:
+        print("Response:", response)
+    else:
+        print("Failed to get RAG response")
