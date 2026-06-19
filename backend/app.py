@@ -188,7 +188,7 @@ def detect_intent_and_language(message, preferred_language='en'):
     
     return intent, language
 
-@app.route('/api/chat', methods=['POST'])
+@app.route('/chat', methods=['POST'])
 def chat():
     """Main chat endpoint with translation, FAQ support, and optional AI analysis
     Supports both traditional FAQ/mock responses and AI-powered responses"""
