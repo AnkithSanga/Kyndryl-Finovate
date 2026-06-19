@@ -378,7 +378,6 @@
 }
 
 .message-content {
-  max-width: 70%;
   padding: 1rem 1.25rem;
   border-radius: 18px;
   word-wrap: break-word;
