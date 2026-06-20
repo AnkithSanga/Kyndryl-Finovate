@@ -256,7 +256,9 @@ const ChatInterface = ({ sessionId, language }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const sendMessage = async (message, isInitial = false) => {
+  const sendMessage = async (message, options = {}) => {
+    const { isInitial = false, faqRequest = false } = options;
+
     // Ensure message is properly trimmed
     const trimmedMessage = String(message).trim();
     
@@ -280,7 +282,8 @@ const ChatInterface = ({ sessionId, language }) => {
         session_id: sessionId,
         language: language,
         translate: true,  // Always enable translation
-        use_ai: useAIRef.current  // Pass current AI toggle setting from ref
+        use_ai: faqRequest ? false : useAIRef.current,
+        faq_request: faqRequest
       });
 
       const assistantMessage = {
@@ -340,7 +343,7 @@ const ChatInterface = ({ sessionId, language }) => {
   };
 
   const handleFAQSelect = (faqQuestion) => {
-    sendMessage(faqQuestion);
+    sendMessage(faqQuestion, { faqRequest: true });
     setShowFAQ(false);
   };
 

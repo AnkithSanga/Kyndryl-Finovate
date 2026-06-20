@@ -201,35 +201,37 @@ def chat():
         
         assistant_response = None
         response_source = 'mock'  # Default source
-        
-        # Try RAG first for knowledge base queries (highest priority)
-        logger.info(f"Attempting RAG query for message: {user_message[:50]}...")
-        rag_response = query_rag(user_message, top_k=5)
-        if rag_response:
-            assistant_response = rag_response
-            response_source = 'rag'
-            logger.info(f"Successfully got RAG response")
-            
-            # Translate RAG response if target language is not English
-            if target_language != 'en' and enable_translation:
-                try:
-                    assistant_response = translate_text(assistant_response, target_language, 'en')
-                    logger.info(f"Translated RAG response to {target_language}")
-                except Exception as e:
-                    logger.error(f"RAG response translation error: {e}")
-                    # Keep the English response if translation fails
-        
-        # If no RAG response, try AI if enabled
-        if not assistant_response and use_ai:
-            logger.info(f"RAG unavailable, using AI mode for message: {user_message[:50]}...")
-            ai_response = get_ai_response(user_message, target_language)
-            if ai_response:
-                assistant_response = ai_response
-                response_source = 'ai'
-                logger.info(f"Successfully got AI response")
-            else:
-                logger.info("AI response unavailable, falling back to FAQ/mock responses")
-                assistant_response = None
+
+        # If this is a FAQ request, skip RAG and AI entirely
+        if not data.get('faq_request', False):
+            # Try RAG first for knowledge base queries (highest priority)
+            logger.info(f"Attempting RAG query for message: {user_message[:50]}...")
+            rag_response = query_rag(user_message, top_k=5)
+            if rag_response:
+                assistant_response = rag_response
+                response_source = 'rag'
+                logger.info(f"Successfully got RAG response")
+
+                # Translate RAG response if target language is not English
+                if target_language != 'en' and enable_translation:
+                    try:
+                        assistant_response = translate_text(assistant_response, target_language, 'en')
+                        logger.info(f"Translated RAG response to {target_language}")
+                    except Exception as e:
+                        logger.error(f"RAG response translation error: {e}")
+                        # Keep the English response if translation fails
+
+            # If no RAG response, try AI if enabled
+            if not assistant_response and use_ai:
+                logger.info(f"RAG unavailable, using AI mode for message: {user_message[:50]}...")
+                ai_response = get_ai_response(user_message, target_language)
+                if ai_response:
+                    assistant_response = ai_response
+                    response_source = 'ai'
+                    logger.info(f"Successfully got AI response")
+                else:
+                    logger.info("AI response unavailable, falling back to FAQ/mock responses")
+                    assistant_response = None
         
         # If no RAG or AI response, use traditional FAQ/mock responses
         if not assistant_response:

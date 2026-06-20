@@ -28,8 +28,18 @@ KNOWLEDGE_BASE = [
     "A customer investing ₹2,000 monthly in a Recurring Deposit for 5 years at 6.75% interest may accumulate approximately ₹1.42 lakh.",
     "Kyndryl Bank Home Loan interest rates start from 8.25% per annum for eligible customers.",
     "A Home Loan of ₹30 lakh for 20 years at 8.50% interest may result in an EMI of approximately ₹26,000 per month.",
-    "Personal Loan interest rates range from 10.50% to 16.99% depending on credit profile and repayment history.",    
-    "A Personal Loan of ₹5 lakh for 5 years at 11% interest may result in an EMI of approximately ₹10,870."
+    "Personal Loan interest rates range from 10.50% to 16.99% depending on credit profile and repayment history.",
+    "A Personal Loan of ₹5 lakh for 5 years at 11% interest may result in an EMI of approximately ₹10,870.",
+    "Kyndryl Bank offers Savings Accounts, Current Accounts, Fixed Deposits, Recurring Deposits, and Salary Accounts.",
+    "To open a new account, customers typically need Aadhaar, PAN, address proof, a photograph, and an initial deposit of at least ₹500.",
+    "UPI is available 24/7 for instant transfers, while NEFT settles in hourly batches and RTGS is real-time for transfers above ₹2 lakh.",
+    "IMPS is instant and available 24/7 for transfers up to ₹2 lakh, and UPI can be used with a mobile number, UPI ID, or QR code.",
+    "Debit and credit cards can be activated through mobile banking or by calling customer care, and lost cards should be blocked immediately.",
+    "Customers can enable transaction alerts for SMS, email, and push notifications through internet banking or the mobile app.",
+    "Digital banking registration requires the account number, registered mobile number, OTP verification, and setting up an MPIN.",
+    "Customer support is available via a 24/7 helpline, email, mobile app, and online branch locator.",
+    "Loan EMIs, repayment schedules, and eligibility depend on principal amount, interest rate, tenure, and credit score.",
+    "KYC updates and account detail changes can be done via branch visit or mobile banking with valid supporting documents."
 ]
 
 # Load embedding model
